@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.wrangler/
+backend/.dev.vars*
+!backend/.dev.vars.example
+backend/.env*
+!backend/.env.example
+backend/.seed-test.db*
+frontend/.env*
+!frontend/.env.example
+*.log

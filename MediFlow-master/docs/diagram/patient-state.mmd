@@ -1,0 +1,14 @@
+stateDiagram-v2
+    %% MediFlow Patient State Diagram (Simplified)
+
+    [*] --> NotArrived
+
+    NotArrived --> Registered
+    Registered --> Queued : Resource Assigned (Priority / FIFO)
+    Queued --> InService : Resource Free & Queue Head
+
+    InService --> Registered : Unfinished Services Remain
+    InService --> Completed : All Required Services Finished
+
+    Completed --> [*]
+
