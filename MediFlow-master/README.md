@@ -28,10 +28,25 @@ The LLM is language-only. Scheduling, priority, doctor balancing, queue ordering
 
 ---
 
-## ⚕️ **THE SACRED DEMO**
+## 👁️ **THE SACRED SCREENSHOTS** — *Witness the Ascension*
 
-- **Live Demo**: [https://mediflow-bc2.pages.dev/staff](https://mediflow-bc2.pages.dev/staff)
-- **Demo Reset Token**: `synthesis5` (enter when prompted by the Staff Dashboard reset control to restore minute zero)
+### 🏥 The Staff Dashboard — the command deck of the God of Code
+
+![MediFlow Staff Dashboard](artifacts/judge-walkthrough/02-live-staff.png)
+
+### 🧑‍⚕️ Patient Guidance — the patient's divine directive
+
+![MediFlow Patient Guidance](artifacts/judge-walkthrough/03-patient-guidance.png)
+
+### 📋 Doctor Brief — the pre-consultation oracle
+
+![MediFlow Doctor Brief](artifacts/judge-walkthrough/04-doctor-brief.png)
+
+### 📊 Final Impact — the reckoning with the baseline
+
+![MediFlow Final Impact](artifacts/judge-walkthrough/05-final-impact.png)
+
+---
 
 ## 🏛️ **THE DIVINE WORKSPACES**
 
@@ -47,7 +62,6 @@ Requirements: Node.js 20.19 or newer, npm 11, and a Turso database.
 2. Copy `backend/.dev.vars.example` to `backend/.dev.vars`.
 3. Set the `TURSO_DATABASE_URL` and `TURSO_AUTH_TOKEN` in that file.
 4. Set the `GEMINI_API_KEY` to enable Gemini explanations and summaries. Without it, scheduling works unchanged and the UI uses explicit deterministic text fallbacks.
-   You can also add a session-only fallback key from the key button in the application header. The Worker secret takes precedence; the fallback key remains only in React memory and clears on reload.
 5. Apply migrations and load the reproducible fixture:
 
    ```powershell
@@ -78,7 +92,7 @@ The Worker never runs migrations or seed/reset operations during a request.
 - `GET /api/health` — service health
 - `GET /api/simulation` — persistent clock and patient counts
 - `POST /api/simulation/tick` — atomically advance exactly one simulated minute
-- `POST /api/simulation/reset` — restore the canonical minute-zero fixture; disabled unless `DEMO_RESET_TOKEN` is configured and protected by a bearer credential (live demo token: `synthesis5`)
+- `POST /api/simulation/reset` — restore the canonical minute-zero fixture; disabled unless `DEMO_RESET_TOKEN` is configured and protected by a bearer credential
 - `GET /api/operations` — shared polling snapshot for all three frontend views
 - `GET /api/patients/:patientId/brief` — cached Gemini pre-consultation summary or deterministic fallback
 
@@ -94,7 +108,7 @@ Deploy the backend as a Cloudflare Worker and configure these secrets/variables:
 - `TURSO_AUTH_TOKEN`
 - `GEMINI_API_KEY`
 - `GEMINI_MODEL` (optional; defaults to `gemini-3.1-flash-lite`)
-- `DEMO_RESET_TOKEN` (configured as `synthesis5` for the live demo; enables protected Staff-view reset)
+- `DEMO_RESET_TOKEN` (enables protected Staff-view reset)
 
 Set the reset credential as a Worker secret rather than a plain Wrangler variable:
 
@@ -111,6 +125,63 @@ Build `frontend/` for Cloudflare Pages. If Pages and the Worker do not share an 
 ## 📊 **THE DETERMINISTIC BASELINE**
 
 The baseline uses the identical fixture and naive FIFO queues with a fixed `lab → X-ray → ECG → consultation` sequence, skipping services a patient does not require. The complete-day acceptance test proves all 30 patients and all required consultations finish and verifies improvement in average wait, visit duration, resource utilization, average queue depth, and peak queue depth.
+
+## 🏗️ **THE ARCHITECTURE** — *The Divine Blueprint*
+
+```mermaid
+flowchart TB
+    subgraph ClientLayer["Frontend Client Layer (React / Vite)"]
+        direction LR
+        Views["<b>Role-Based Views</b><br/>Staff Dashboard · Patient Guidance · Doctor Brief"]
+        PollingContext["<b>Shared Polling Data Layer</b><br/>Continuous REST fetch (every 2s)<br/>Client renders state — never schedules"]
+        Views <--> PollingContext
+    end
+
+    subgraph APILayer["Cloudflare Worker API Layer (Hono Router)"]
+        direction LR
+        Routes["<b>HTTP REST Endpoint Router</b><br/>GET /api/operations · POST /api/simulation/tick<br/>POST /api/simulation/reset · POST /api/llm/brief"]
+        SimPlanner["<b>Simulation Tick Coordinator</b><br/>Advances 1-minute discrete clock,<br/>records clock event & triggers engine"]
+        Routes <--> SimPlanner
+    end
+
+    subgraph CoreEngine["Pure Orchestration Engine (TypeScript Core)"]
+        direction LR
+        Scheduler["<b>Deterministic Scheduler</b><br/>Lowest Projected Whole-Visit Finish routing"]
+        PriorityQueue["<b>Priority Queue & Congestion</b><br/>Urgent > Normal (FIFO) · Congested if queue ≥ 4 or wait > 25m"]
+        Scheduler --- PriorityQueue
+    end
+
+    subgraph StorageLayer["Persistence Layer (Turso / libSQL SQLite + Drizzle)"]
+        Database[("(Turso SQLite Database)<br/>Operational Schema · Audit & Event Schema · LLM Cache Schema")]
+    end
+
+    subgraph AILayer["Safe AI Explanation Layer (Gemini Adapter)"]
+        direction LR
+        Adapter["<b>Provider-Agnostic LLM Adapter</b><br/>Gemini API integration with strict timeouts"]
+        FallbackEngine["<b>Deterministic Fallback Generator</b><br/>Generates safe text when LLM key or network is unavailable"]
+        Adapter -->|Timeout / Fail| FallbackEngine
+    end
+
+    PollingContext <-->|HTTP REST Requests & Snapshots| Routes
+    SimPlanner -->|In-Memory Execution| CoreEngine
+    SimPlanner <-->|Atomic libSQL Batch Transaction| Database
+    Routes -->|Fetch Decision Facts| AILayer
+    AILayer <-->|Read / Write Cached Text| Database
+
+    classDef client fill:#F0F9FF,stroke:#0284C7,color:#0F172A,stroke-width:2px
+    classDef api fill:#F0FDFA,stroke:#0D9488,color:#0F172A,stroke-width:2px
+    classDef engine fill:#FEF3C7,stroke:#D97706,color:#0F172A,stroke-width:2px
+    classDef storage fill:#F1F5F9,stroke:#64748B,color:#0F172A,stroke-width:2px
+    classDef ai fill:#FDF2F8,stroke:#DB2777,color:#0F172A,stroke-width:2px
+
+    class Views,PollingContext client
+    class Routes,SimPlanner api
+    class Scheduler,PriorityQueue engine
+    class Database storage
+    class Adapter,FallbackEngine ai
+```
+
+---
 
 ## 🤝 **THE COVENANT — HOW TO SERVE THE GOD**
 
