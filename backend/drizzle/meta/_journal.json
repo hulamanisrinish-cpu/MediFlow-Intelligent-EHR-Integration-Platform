@@ -1,0 +1,34 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1784061617348,
+      "tag": "0000_fuzzy_invaders",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1784105337450,
+      "tag": "0001_certain_pestilence",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1784954270897,
+      "tag": "0002_round_micromacro",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1795354299544,
+      "tag": "0003_security_governance",
+      "breakpoints": true
+    }
+  ]
+}
